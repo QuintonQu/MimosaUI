@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var searchText = ""
+    
     var body: some View {
         NavigationSplitView {
             Sidebar()
@@ -15,16 +17,56 @@ struct ContentView: View {
             ScenesUI()
         }
         .navigationTitle("All Boards")
+        .searchable(text: $searchText)
     }
 }
 
 struct BoardView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @State private var isInspectorPresented = true
+    @State private var selectedIndex = 2
         
     var body: some View {
-        Text("Board Details")
+        Text("Rendering")
             .navigationBarBackButtonHidden(false)
-            .navigationTitle("Board Details")
+            .navigationTitle("Rendering")
+            .inspector(isPresented: $isInspectorPresented) {
+                InspectorView(selectedIndex: $selectedIndex)
+                .inspectorColumnWidth(min: 200, ideal: 300, max: 400)
+                .toolbar {
+                    Button(action: { isInspectorPresented.toggle() }) {
+                        Label("Toggle Inspector", systemImage: "sidebar.right")
+                    }
+                }
+            }
+    }
+}
+
+struct InspectorView: View {
+    @Binding var selectedIndex: Int
+//    @State private var selection: Int = 0
+    
+    var body: some View {
+        List {
+            Text("Integrators")
+                .font(.headline)
+            Picker(selection: $selectedIndex, label: EmptyView()) {
+                Text("BRDF").tag(0)
+                Text("NEE").tag(1)
+                Text("MIS").tag(2)
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .onChange(of: selectedIndex){
+                print("change selection")
+            }
+            Divider()
+//            Picker(selection: $selection, label: Text("Picker Label")) {
+//                Text("Option 1").tag(0)
+//                Text("Option 2").tag(1)
+//                Text("Option 3").tag(2)
+//            }
+        }
+        .listStyle(SidebarListStyle())
+//        .frame(minWidth: 100)
     }
 }
 
@@ -53,54 +95,55 @@ struct Sidebar: View {
 }
 
 struct ScenesUI: View {
-    @State private var searchText = ""
     @State private var isCardView = true
     
     let boards = [
-        ("Board 1", "1 hour ago"),
-        ("Board 2", "2 hours ago"),
-        ("Board 3", "3 hours ago")
+        ("Scene 1", "1 hour ago"),
+        ("Scene 2", "2 hours ago"),
+        ("Scene 3", "3 hours ago")
     ]
     
     var body: some View {
         NavigationStack {
             if isCardView {
                 ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 200))]) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 220))]) {
                         ForEach(boards, id: \.0) { board in
                             NavigationStack() {
-                                ZStack(alignment: .bottom) {
-                                    Image(systemName: "photo")
-                                        .resizable()
-                                        .frame(width: 200, height: 200)
-                                    
-                                    Rectangle()
-                                        .fill(Color.gray.opacity(0.7))
-                                        .frame(height: 50)
-                                    
-                                    VStack(alignment: .leading) {
-                                        Text(board.0)
-                                            .font(.headline)
-                                            .foregroundColor(.white)
-                                        Text("Last opened: \(board.1)")
-                                            .font(.subheadline)
-                                            .foregroundColor(.white)
+                                NavigationLink(destination:BoardView()){
+                                    ZStack(alignment: .bottom) {
+                                        Image(systemName: "photo")
+                                            .resizable()
+                                            .frame(width: 200, height: 200)
+                                        
+                                        Rectangle()
+                                            .fill(Color.gray.opacity(0.7))
+                                            .frame(height: 50)
+                                        
+                                        VStack(alignment: .leading) {
+                                            Text(board.0)
+                                                .font(.headline)
+                                                .foregroundColor(.white)
+                                            Text("Last opened: \(board.1)")
+                                                .font(.subheadline)
+                                                .foregroundColor(.white)
+                                        }
+                                        .padding()
                                     }
+                                    .cornerRadius(10)
                                     .padding()
                                 }
-                                .cornerRadius(10)
-                                .padding()
-//                                .navigationDestination(isPresented: false, destination: BoardView())
-                                .navigationTitle("All Boards")
+                                .buttonStyle(PlainButtonStyle())
                             }
                         }
                     }
                 }
+                .background(Color.white)
             } else {
                 List {
                     ForEach(boards, id: \.0) { board in
                         NavigationStack() {
-                            HStack {
+                            NavigationLink(destination:BoardView()) {
                                 Image(systemName: "photo")
                                     .resizable()
                                     .frame(width: 50, height: 50)
@@ -116,12 +159,11 @@ struct ScenesUI: View {
                 }
             }
         }
-        .navigationTitle("All Boards")
+        .navigationTitle("All Scenes")
         .toolbar {
             Button(action: { isCardView.toggle() }) {
                 Image(systemName: isCardView ? "list.bullet" : "square.grid.2x2")
             }
         }
-        .searchable(text: $searchText)
     }
 }
